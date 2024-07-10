@@ -38,6 +38,7 @@ class Customer:
         self.name = "c_{}".format(id_number)
         self.location = int(location)
         self.status = -1
+        self.revenue = 0
         self.order_time = order_time
         self.expected_delivery_time = expected_delivery_time
         self.restaurant_choice = restaurant_choice

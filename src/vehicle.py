@@ -82,7 +82,7 @@ class Stop:
         Returns the actual time (in seconds) it takes to drive to the spot, find parking, and synchronize with the
         restaurant (if applicable).
         """
-        return self.estimated_travel_time + self.estimated_park_time + self.estimated_wait_time
+        return self.actual_travel_time + self.actual_park_time + self.actual_wait_time
 
     def summary(self):
         r"""
@@ -126,6 +126,7 @@ class Vehicle:
         self.location = int(location)  # current (or next) idle location of vehicle given by node in the graph
         self.sequence_of_stops = []  # list of stops to visit
         self.orders_in_backpack = []  # list of tuples (customer_id, restaurant_id)
+        self.total_travel_time = 0
 
     def update(self, time: int) -> Tuple[dict, dict]:
         r"""
@@ -153,6 +154,7 @@ class Vehicle:
             else:
                 # stop has been visited and is removed
                 stop = self.sequence_of_stops.pop(0)
+                self.total_travel_time += stop.actual_travel_time
                 # if pickup stop, we remove the orders from the restaurant's prepared meals
                 if stop.type == "pickup":
                     picked_up[stop.restaurant_id] = stop.orders_to_pickup

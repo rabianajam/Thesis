@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Order:
     r"""
     An order is placed by a customer at the platform, which is then forwarded to the restaurant.
@@ -73,13 +76,16 @@ class Restaurant:
         picked up by a vehicle.
     """
 
-    def __init__(self, id_number: int, location: int) -> None:
+    def __init__(self, id_number: int, location: int,
+                 basket_size_mean: float = 1.0, basket_size_std: float = 0.0) -> None:
         self.name = "r_{}".format(id_number)
         self.location = int(location)
         self.queue = []
         self.time_queue = []
         self.estimated_time_queue = []
         self.prepared_orders = []
+        self.basket_size_mean = basket_size_mean
+        self.basket_size_std = basket_size_std
 
     def update(self, time: int) -> None:
         r"""
@@ -120,6 +126,12 @@ class Restaurant:
                 for i in range(insertion_index + 1, len(self.queue)):
                     self.estimated_time_queue[i] += order.estimated_preparation_time
                     self.time_queue[i] += order.actual_preparation_time
+
+    def sample_random_basket_size(self):
+        r"""
+        Samples a random monetary value of an order from a normal distribution with given mean and std.
+        """
+        return np.random.normal(loc=self.basket_size_mean, scale=self.basket_size_std)
 
     def get_actual_waiting_time(self, orders: list, time: int) -> float:
         r"""
