@@ -20,7 +20,7 @@ if __name__ == "__main__":
         while True:
 
             # demand control action
-            if env.endogenous_choice and obs["new_customer"] is not None:
+            if env.endogenous_choice and obs["new_customer_info"] is not None:
                 demand_action = demand_policy.act(obs)
                 obs = env.update_customers_choices(demand_action=demand_action, choice_model=simple_customer_choice)
 

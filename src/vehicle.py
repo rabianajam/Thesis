@@ -18,6 +18,8 @@ class Stop:
         Name of the restaurant where the pickup takes place, if type == 'pickup'. ELse, None.
     start_at : int
         Earliest time at which the vehicle should leave its last location towards the stop.
+    started_at : int
+        Time at which the vehicle left its last location towards the stop.
     estimated_travel_time : int
         Estimated time (in seconds) required to drive from the last location to the stop.
     actual_travel_time : int
@@ -93,6 +95,7 @@ class Stop:
                 "restaurant_id": self.restaurant_id,
                 "customer_id": self.customer_id,
                 "start_at": self.start_at,
+                "started_at": self.started_at,
                 "estimated_time_required": self.estimated_total_time,
                 "orders_to_pickup": self.orders_to_pickup}
 
@@ -126,7 +129,7 @@ class Vehicle:
         self.location = int(location)  # current (or next) idle location of vehicle given by node in the graph
         self.sequence_of_stops = []  # list of stops to visit
         self.orders_in_backpack = []  # list of tuples (customer_id, restaurant_id)
-        self.total_travel_time = 0
+        self.total_travel_time = 0  # compensated travel time of vehicle (driving to pick up or deliver an order)
 
     def update(self, time: int) -> Tuple[dict, dict]:
         r"""

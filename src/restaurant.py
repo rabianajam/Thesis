@@ -23,6 +23,8 @@ class Order:
         Name of the customer that placed the order.
     start_at : int
         Earliest time at which the preparation process should be started at.
+    finished_at : int
+        Time at which preparation actually finished
     estimated_preparation_time : int
         Estimated time to prepare the order assuming the preparation starts now.
     actual_preparation_time : int
@@ -33,6 +35,7 @@ class Order:
                  actual_preparation_time):
         self.customer_id = customer_id
         self.start_at = start_at
+        self.finished_at = None
         self.estimated_preparation_time = estimated_preparation_time
         self.actual_preparation_time = actual_preparation_time
 
@@ -42,6 +45,7 @@ class Order:
         """
         return {"customer_id": self.customer_id,
                 "start_at": self.start_at,
+                "finished_at": self.finished_at,
                 "estimated_preparation_time": self.estimated_preparation_time}
 
 
@@ -98,6 +102,7 @@ class Restaurant:
                 self.prepared_orders.append(self.queue.pop(index))
                 self.time_queue.pop(index)
                 self.estimated_time_queue.pop(index)
+                self.prepared_orders[-1].finished_at = cook_time
             else:
                 break
 

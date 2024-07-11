@@ -30,8 +30,7 @@ class SimpleProximityDemandControl(DemandPolicy):
         r"""
         Returns a demand control decision for every customer that has yet to choose.
         """
-        new_customer_name = obs["new_customer"]
-        customer_node = obs["customer_info"][new_customer_name]["location"]
+        customer_node = obs["new_customer_info"]["location"]
         displayed_restaurants = restaurant_proximity_filter(proximity=self.proximity,
                                                             customer_node=customer_node,
                                                             restaurant_nodes=self.restaurant_nodes,

@@ -48,7 +48,8 @@ class Customer:
         r"""
         Returns a summary of the customer as a dictionary.
         """
-        return {"location": self.location,
+        return {"name": self.name,
+                "location": self.location,
                 "order_time": self.order_time,
                 "expected_delivery_time": self.expected_delivery_time,
                 "restaurant_choice": self.restaurant_choice}

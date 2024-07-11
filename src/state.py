@@ -4,7 +4,7 @@ from src.vehicle import Vehicle, Stop
 from src.templates import VehicleAction, Action, Observation
 import numpy as np
 import simplejson as json
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict
 
 
 class MealDeliveryMDP:
@@ -138,7 +138,8 @@ class MealDeliveryMDP:
         self.open_requests = None  # list of revealed but not served customers
         self.served_requests = None  # list of revealed and served requests
         self.unassigned_orders = None  # list of (customer namen restaurant ids that have not been assigned
-        self.new_customer_name = None  # customer that has not chosen a restaurant (important for demand control)
+        self.placed_orders = None # list of all the orders placed (customers may place multiple orders)
+        self.new_customer = None  # customer that has not chosen a restaurant (important for demand control)
 
     @property
     def observation(self) -> Observation:
@@ -147,7 +148,7 @@ class MealDeliveryMDP:
         """
         obs = {"current_time": self.time,
                "unassigned_orders": self.unassigned_orders,
-               "new_customer": self.new_customer_name,
+               "new_customer_info": self.new_customer.summary() if self.new_customer is not None else None,
                "vehicle_info": {name: vehicle.summary(self.time) for name, vehicle in self.vehicles.items()},
                "restaurant_info": {name: restaurant.summary() for name, restaurant in self.restaurants.items()},
                "customer_info": {customer.name: customer.summary() for customer in self.open_requests}}
@@ -169,6 +170,35 @@ class MealDeliveryMDP:
         """
         return sum([max(0, max(customer.delivery_time.values()) - customer.expected_delivery_time)
                     for customer in self.served_requests]) / len(self.served_requests) / 60
+
+    @property
+    def mean_freshness(self) -> float:
+        total_freshness = 0
+        total_delivered_orders = 0
+
+        for customer in self.served_requests:
+            for restaurant_name in customer.restaurant_choice:
+                delivery_time = customer.delivery_time.get(restaurant_name)
+                if delivery_time is not None:
+                    for order in self.placed_orders:
+                        if order.customer_id == customer.name and order.restaurant_name == restaurant_name:
+                            freshness = delivery_time - order.finished_at
+                            total_freshness += max(freshness, 0)
+                            total_delivered_orders += 1
+                            break
+
+        return (total_freshness / total_delivered_orders) / 60 if total_delivered_orders > 0 else 0
+
+    @property
+    def mean_sync_delay(self) -> float:
+        r"""
+        Returns the mean synchronization delay, representing how well the deliveries are synchronized.
+        It could be calculated as the average delay between the earliest and latest delivery
+        times for all served customers.
+        """
+        total_sync_delay = sum([max(customer.delivery_time.values()) - min(customer.delivery_time.values())
+                                for customer in self.served_requests if len(customer.delivery_time.values()) > 1])
+        return total_sync_delay / len(self.served_requests) / 60
 
     @property
     def total_revenue(self) -> float:
@@ -245,6 +275,7 @@ class MealDeliveryMDP:
                 estimated_preparation_time = self.expected_cook_time
                 actual_preparation_time = self._sample_cook_time()
                 order = Order(customer_id, start_at, estimated_preparation_time, actual_preparation_time)
+                self.placed_orders.append(order)
                 # insert Order
                 restaurant.take_order(insertion_index, order, self.time)
 
@@ -277,17 +308,17 @@ class MealDeliveryMDP:
         # sample a new customer and update current time
         if self.unknown_requests:
             new_customer = self.unknown_requests.pop(0)
-            self.new_customer_name = new_customer.name
+            self.new_customer = new_customer
             if not self.endogenous_choice:
                 new_customer.status = 0
                 new_customer.revenue = 1
-            self.open_requests.append(new_customer)
-            self.unassigned_orders.extend([(new_customer.name, restaurant_id)
-                                           for restaurant_id in new_customer.restaurant_choice])
+                self.open_requests.append(new_customer)
+                self.unassigned_orders.extend([(new_customer.name, restaurant_id)
+                                               for restaurant_id in new_customer.restaurant_choice])
             self.time = new_customer.order_time
         else:
             self.time += 360  # forward one hour
-            self.new_customer_name = None  # no new customer
+            self.new_customer = None  # no new customer
 
         # update all restaurant status
         for restaurant in self.restaurants.values():
@@ -315,7 +346,7 @@ class MealDeliveryMDP:
     def update_customers_choices(self, demand_action: Dict, choice_model: callable) -> Observation:
         r"""Update the new customer's restaurant selections based on an endogenous choice process."""
 
-        new_customer = self.customers[self.new_customer_name]
+        new_customer = self.new_customer
 
         # sample restaurant choice based on demand control action
         customers_restaurant_choices = choice_model(demand_action)
@@ -324,15 +355,12 @@ class MealDeliveryMDP:
         # then return an updated observation
         if customers_restaurant_choices is not None:
             new_customer.restaurant_choice = customers_restaurant_choices
+            new_customer.delivery_time = {r_choice: None for r_choice in customers_restaurant_choices}
             new_customer.status = 0
+            self.open_requests.append(new_customer)
             for chosen_restaurant in customers_restaurant_choices:
                 new_customer.revenue += self.restaurants[chosen_restaurant].sample_random_basket_size()
-
-        # if the customer does not choose a restaurant, we remove him from the system
-        else:
-            self.open_requests.remove(new_customer)
-            self.unassigned_orders = [(c, r) for (c, r) in self.unassigned_orders if c != self.new_customer_name]
-
+                self.unassigned_orders.append((new_customer.name, chosen_restaurant))
         # we need to update the observation to match the endogenous restaurant choice
         return self.observation
 
@@ -352,7 +380,8 @@ class MealDeliveryMDP:
         self.unknown_requests = []
         self.served_requests = []
         self.unassigned_orders = []
-        self.new_customer_name = None
+        self.placed_orders = []
+        self.new_customer = None
 
         # initialize restaurants
         self._init_restaurants()
@@ -410,7 +439,7 @@ class MealDeliveryMDP:
                                 order_time=order_times[i],
                                 expected_delivery_time=order_times[i] + self.service_promise * 60,
                                 restaurant_choice=["r_{}".format(i) for i in np.random.choice(a=self.n_restaurants,
-                                                                                              size=2, replace=False)])
+                                                                                              size=1, replace=False)])
             self.customers[customer.name] = customer
             self.unknown_requests.append(customer)
 
