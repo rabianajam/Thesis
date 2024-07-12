@@ -151,7 +151,9 @@ class MealDeliveryMDP:
                "new_customer_info": self.new_customer.summary() if self.new_customer is not None else None,
                "vehicle_info": {name: vehicle.summary(self.time) for name, vehicle in self.vehicles.items()},
                "restaurant_info": {name: restaurant.summary() for name, restaurant in self.restaurants.items()},
-               "customer_info": {customer.name: customer.summary() for customer in self.open_requests}}
+               "customer_info": {customer.name: customer.summary() for customer in self.open_requests},
+               "all_customers_info": {customer.name: customer.summary()
+                                      for customer in self.open_requests + self.served_requests}}
         return Observation(obs)
 
     @property
@@ -211,9 +213,9 @@ class MealDeliveryMDP:
     @property
     def total_travel_time(self):
         r"""
-        Returns the sum of travel times over all vehicles. This excludes waiting and parking times.
+        Returns the average total travel times (in minutes). This excludes waiting, parking, repositioning times.
         """
-        return sum([v.total_travel_time for v in self.vehicles.values()])
+        return sum([v.total_travel_time for v in self.vehicles.values()]) / self.n_vehicles / 60
 
     def step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
         r"""

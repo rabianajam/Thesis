@@ -7,20 +7,34 @@ import configparser
 if __name__ == "__main__":
 
     config = configparser.ConfigParser(allow_no_value=True)
-    config.read('../data/instances/iowa_110_5_55_80.ini')
+    config.read('../data/instances/iowa_110_40_550_800.ini')
     env = MealDeliveryMDP(config, seed=42)
     policy = SimpleAssignmentPolicy()
-    demand_policy = SimpleProximityDemandControl(proximity=10*60, restaurant_nodes=env.restaurant_location_list,
+    demand_policy = SimpleProximityDemandControl(proximity=[10*60]*110, restaurant_nodes=env.restaurant_location_list,
                                                  tt_matrix=env.tt_matrix)
 
     for i in range(0, 100):
 
         obs = env.reset()
+        last_demand_control_update = 0
 
         while True:
 
             # demand control action
             if env.endogenous_choice and obs["new_customer_info"] is not None:
+
+                # update proximity parameter in demand control policy
+                if obs["current_time"] >= last_demand_control_update + 600:
+                    # calculate new proximity parameters
+                    """@Rabia: You only need to change code here. This is where you can adjust the proximity
+                    parameters after every 10 minutes. Proximity is given in seconds of travel time.
+                    The state information you need to set the proximity parameter are given in the
+                    variable called 'obs'. It contains information on customers, vehicles and restaurants."""
+                    demand_policy.proximity = [10*60] * 110
+                    """
+                    Everything after this line you do not need to change.
+                    """
+
                 demand_action = demand_policy.act(obs)
                 obs = env.update_customers_choices(demand_action=demand_action, choice_model=simple_customer_choice)
 
