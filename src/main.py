@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from src.state import MealDeliveryMDP
 from src.policies.fleet_control.simple_assignment import SimpleAssignmentPolicy
 from src.policies.demand_control.simple_proximity import SimpleProximityDemandControl
