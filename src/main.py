@@ -11,7 +11,7 @@ import configparser
 if __name__ == "__main__":
 
     config = configparser.ConfigParser(allow_no_value=True)
-    config.read('../data/instances/iowa_110_40_550_800.ini')
+    config.read('/content/meal_delivery/data/instances/iowa_110_40_550_800.ini')
     env = MealDeliveryMDP(config, seed=42)
     policy = SimpleAssignmentPolicy()
     demand_policy = SimpleProximityDemandControl(proximity=[10*60]*110, restaurant_nodes=env.restaurant_location_list,
