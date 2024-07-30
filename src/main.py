@@ -35,7 +35,10 @@ if __name__ == "__main__":
                     parameters after every 10 minutes. Proximity is given in seconds of travel time.
                     The state information you need to set the proximity parameter are given in the
                     variable called 'obs'. It contains information on customers, vehicles and restaurants."""
-                    demand_policy.proximity = [10*60] * 110
+                    demand_policy.proximity = [(15 - 0.01 * (len(obs["customer_info"])/len(obs["vehicle_info"]))-
+                                                0.01*np.mean([v["busy_time"] 
+                                                for v in obs["vehicle_info"].values()]))*60] * 110
+
                     """
                     Everything after this line you do not need to change.
                     """
