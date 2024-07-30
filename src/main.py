@@ -7,6 +7,7 @@ from src.policies.fleet_control.simple_assignment import SimpleAssignmentPolicy
 from src.policies.demand_control.simple_proximity import SimpleProximityDemandControl
 from src.policies.demand_control.customer_choice_models import simple_customer_choice
 import configparser
+import numpy as np
 
 if __name__ == "__main__":
 
